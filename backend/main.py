@@ -111,6 +111,10 @@ async def chat(session_id: int, user_message: str):
         # 2. Add User Message to DB
         msg = Message(session_id=session_id, role="user", content=user_message)
         session.add(msg)
+        
+        # Increment interaction count
+        character.interaction_count += 1
+        session.add(character)
         session.commit()
 
         # 3. Retrieve Memory

@@ -19,6 +19,9 @@ class Character(SQLModel, table=True):
     traits: List[str] = Field(default=[], sa_column=Column(JSON))
     system_prompt: str
     few_shot_examples: List[dict] = Field(default=[], sa_column=Column(JSON))
+    image_url: Optional[str] = None
+    banner_url: Optional[str] = None
+    interaction_count: int = Field(default=0)
     owner_id: int = Field(foreign_key="user.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
