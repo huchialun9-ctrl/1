@@ -1,6 +1,7 @@
 import google.generativeai as genai
+import os
 import re
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -21,13 +22,12 @@ class AIService:
             contents.append({"role": "user" if msg["role"] == "user" else "model", "parts": [{"text": msg["content"]}]})
         
         # Multimodal: Audio + Text
-        user_parts = []
+        user_parts: List[Dict[str, Any]] = []
         if audio_data:
-            user_parts.append({"mime_type": "audio/wav", "data": audio_data})
+            user_parts.append({"inline_data": {"mime_type": "audio/wav", "data": audio_data}})
         if user_message:
             user_parts.append({"text": user_message})
         else:
-            # If only audio is provided, we still need a textual hint or just the audio
             user_parts.append({"text": "[Audio Input]"})
 
         contents.append({"role": "user", "parts": user_parts})
