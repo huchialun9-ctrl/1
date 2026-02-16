@@ -8,9 +8,9 @@ import GlowRing from "@/components/GlowRing";
 import Image from "next/image";
 
 const SHOWCASE_IMAGES = [
-    "/auth-1.png",
-    "/auth-2.png",
-    "/auth-3.png"
+    "/assets/showcase/1.png",
+    "/assets/showcase/2.png",
+    "/assets/showcase/3.png"
 ];
 
 export default function AuthPage() {
@@ -37,7 +37,12 @@ export default function AuthPage() {
                     <div className="absolute inset-0 border border-primary/20 rounded-3xl -z-10 group-hover:border-primary/40 transition-colors" />
 
                     <div className="flex flex-col items-center mb-10">
-                        <GlowRing state="idle" className="w-20 h-20 mb-6" />
+                        <div className="relative mb-6">
+                            <GlowRing state="idle" className="w-20 h-20" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <Image src="/assets/logo.png" alt="O ai" width={32} height={32} className="opacity-80" />
+                            </div>
+                        </div>
                         <h1 className="text-3xl font-black tracking-tighter text-center">
                             {isLogin ? "Welcome Back" : "Start Your Story"}
                         </h1>

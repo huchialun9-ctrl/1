@@ -15,7 +15,7 @@ export default function Navbar() {
                         className="relative w-10 h-10"
                     >
                         <Image
-                            src="/logo.png"
+                            src="/assets/logo.png"
                             alt="O ai Logo"
                             fill
                             className="object-contain"

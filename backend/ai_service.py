@@ -4,14 +4,14 @@ import re
 from dotenv import load_dotenv
 
 load_dotenv()
+api_key = os.getenv("GOOGLE_API_KEY")
+if api_key:
+    genai.configure(api_key=api_key)
+else:
+    print("Warning: GOOGLE_API_KEY not found in environment")
 
 class AIService:
     def __init__(self):
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            # Fallback or error
-            pass
-        genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel('gemini-1.5-pro')
 
     async def generate_response(self, system_prompt: str, chat_history: list, user_message: str, stream=True):
