@@ -6,6 +6,9 @@ from sqlmodel import Session, select, create_engine, SQLModel
 from typing import List
 import json
 import asyncio
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from models import User, Character, ChatSession, Message
 from ai_service import AIService
@@ -15,6 +18,9 @@ from moderation_service import ModerationService
 # Database setup
 database_url = os.getenv("DATABASE_URL")
 if not database_url:
+    print("CRITICAL: DATABASE_URL not found in environment. Please set it in Railway settings.")
+    # For local development with uvicorn, we might want to allow it to fail later or use a default
+    # but since we want to be cloud-native, we enforce it.
     raise RuntimeError("DATABASE_URL not found in environment")
 engine = create_engine(database_url)
 
