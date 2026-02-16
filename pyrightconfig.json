@@ -1,0 +1,11 @@
+{
+    "include": [
+        "backend"
+    ],
+    "pythonVersion": "3.12",
+    "pythonPlatform": "Darwin",
+    "extraPaths": [
+        "./backend"
+    ],
+    "typeCheckingMode": "basic"
+}
