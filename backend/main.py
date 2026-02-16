@@ -18,9 +18,9 @@ from moderation_service import ModerationService
 # Database setup
 database_url = os.getenv("DATABASE_URL")
 if not database_url:
-    print("CRITICAL: DATABASE_URL not found in environment. Please set it in Railway settings.")
-    # For local development with uvicorn, we might want to allow it to fail later or use a default
-    # but since we want to be cloud-native, we enforce it.
+    print("CRITICAL: DATABASE_URL not found in environment.")
+    print(f"DEBUG: Available environment keys: {list(os.environ.keys())}")
+    print("Please ensure you have added DATABASE_URL to your Railway Variables tab.")
     raise RuntimeError("DATABASE_URL not found in environment")
 engine = create_engine(database_url)
 

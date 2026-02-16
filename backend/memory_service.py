@@ -4,6 +4,9 @@ import os
 import redis
 import json
 from typing import Optional, List, Dict
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class MemoryService:
     def __init__(self):
