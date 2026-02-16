@@ -39,19 +39,47 @@ export default function ChatPage() {
         setInput("");
         setAiState("thinking");
 
-        // Simulate AI Response with "Speaking" state and action text
-        setTimeout(() => {
-            setAiState("speaking");
-            const assistantMsg: Message = {
-                id: (Date.now() + 1).toString(),
-                role: "assistant",
-                content: "*Silently studies you for a moment before nodding.* Echoes of your words resonate within the vault. Tell me more about why you seek the Oracle today."
-            };
-            setMessages(prev => [...prev, assistantMsg]);
+        try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+            // Hardcoding session_id 1 for now, or you can manage it via state
+            const response = await fetch(`${apiUrl}/chat/1?user_message=${encodeURIComponent(input)}`, {
+                method: "POST"
+            });
 
-            // Return to idle after delay
-            setTimeout(() => setAiState("idle"), 2500);
-        }, 1500);
+            if (!response.ok) throw new Error("API call failed");
+
+            // Handle streaming or simple text response
+            const reader = response.body?.getReader();
+            const decoder = new TextDecoder();
+            let fullText = "";
+
+            setAiState("speaking");
+
+            const assistantMsgId = (Date.now() + 1).toString();
+            setMessages(prev => [...prev, { id: assistantMsgId, role: "assistant", content: "" }]);
+
+            if (reader) {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    const chunk = decoder.decode(value);
+                    fullText += chunk;
+
+                    setMessages(prev => prev.map(m =>
+                        m.id === assistantMsgId ? { ...m, content: fullText } : m
+                    ));
+                }
+            }
+        } catch (err) {
+            console.error("Chat failed:", err);
+            setMessages(prev => [...prev, {
+                id: "error",
+                role: "assistant",
+                content: "*Connection lost. Retrying neural link...*"
+            }]);
+        } finally {
+            setAiState("idle");
+        }
     };
 
     const renderContent = (content: string) => {
@@ -128,8 +156,8 @@ export default function ChatPage() {
                                         <div className="text-[10px] uppercase tracking-widest text-secondary font-bold mb-3 opacity-30">Oracle</div>
                                     )}
                                     <div className={`text-lg md:text-xl leading-relaxed ${msg.role === 'user'
-                                            ? 'text-white font-medium bg-white/5 px-6 py-4 rounded-2xl border border-white/5 shadow-sm'
-                                            : 'text-white/90 font-light'
+                                        ? 'text-white font-medium bg-white/5 px-6 py-4 rounded-2xl border border-white/5 shadow-sm'
+                                        : 'text-white/90 font-light'
                                         }`}>
                                         {renderContent(msg.content)}
                                     </div>

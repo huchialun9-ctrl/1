@@ -14,10 +14,31 @@ export default function CreateCharacter() {
         examples: ["", "", ""]
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("Saving character:", formData);
-        // Add API call here
+
+        const payload = {
+            ...formData,
+            traits: formData.traits.split(",").map(t => t.trim()),
+            few_shot_examples: formData.examples.filter(ex => ex.trim() !== "")
+        };
+
+        try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+            const response = await fetch(`${apiUrl}/characters/`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error("Failed to create character");
+
+            alert("Character brought to life! Check the Explorer.");
+            window.location.href = "/chat";
+        } catch (err) {
+            console.error("Creation failed:", err);
+            alert("Failed to create character. Check backend connection.");
+        }
     };
 
     return (
