@@ -7,10 +7,10 @@ from typing import List
 import json
 import asyncio
 
-from .models import User, Character, ChatSession, Message
-from .ai_service import AIService
-from .memory_service import MemoryService
-from .moderation_service import ModerationService
+from models import User, Character, ChatSession, Message
+from ai_service import AIService
+from memory_service import MemoryService
+from moderation_service import ModerationService
 
 # Database setup
 database_url = os.getenv("DATABASE_URL")
