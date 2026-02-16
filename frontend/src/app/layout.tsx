@@ -17,8 +17,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} gradient-bg min-h-screen pt-20`}>
-        <div className="fixed inset-0 pointer-events-none gradient-bg -z-10" />
+      <body className={`${inter.className} min-h-screen relative`}>
         <Navbar />
         {children}
       </body>
