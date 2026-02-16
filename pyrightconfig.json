@@ -6,12 +6,12 @@
         "**/node_modules",
         "**/__pycache__"
     ],
-    "pythonVersion": "3.12",
-    "pythonPlatform": "Darwin",
-    "venvPath": ".",
+    "venvPath": "/Users/jianyufang/Documents/1",
     "venv": ".venv",
     "extraPaths": [
         "./backend"
     ],
+    "pythonVersion": "3.12",
+    "pythonPlatform": "Darwin",
     "typeCheckingMode": "basic"
 }
