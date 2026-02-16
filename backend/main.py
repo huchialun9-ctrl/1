@@ -13,9 +13,10 @@ from .memory_service import MemoryService
 from .moderation_service import ModerationService
 
 # Database setup
-database_url = os.getenv("DATABASE_URL", "sqlite:///./oai.db")
-connect_args = {"check_same_thread": False} if database_url.startswith("sqlite") else {}
-engine = create_engine(database_url, connect_args=connect_args)
+database_url = os.getenv("DATABASE_URL")
+if not database_url:
+    raise RuntimeError("DATABASE_URL not found in environment")
+engine = create_engine(database_url)
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)

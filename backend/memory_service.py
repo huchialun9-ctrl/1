@@ -8,14 +8,18 @@ from typing import Optional, List, Dict
 class MemoryService:
     def __init__(self):
         # Long-term (Vector DB)
-        self.chroma_client = chromadb.PersistentClient(path="./db/chroma")
+        chroma_path = os.getenv("CHROMA_PATH", "./db/chroma")
+        self.chroma_client = chromadb.PersistentClient(path=chroma_path)
         self.embedding_function = embedding_functions.DefaultEmbeddingFunction()
         self.collection = self.chroma_client.get_or_create_collection(
             name="oai_memory", 
             embedding_function=self.embedding_function
         )
         # Short-term (Redis)
-        self.redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+        redis_url = os.getenv("REDIS_URL")
+        if not redis_url:
+             raise RuntimeError("REDIS_URL not found in environment")
+        self.redis_client = redis.Redis.from_url(redis_url, decode_responses=True)
         self.short_term_limit = 10 # Last 10 messages for immediate context
 
     def add_message(self, session_id: str, role: str, content: str):

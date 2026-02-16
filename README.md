@@ -17,13 +17,11 @@
 ### Backend
 1. `cd backend`
 2. `pip install -r requirements.txt`
-3. Create `.env` and add your `GEMINI_API_KEY`.
+3. Create `.env` and configure your credentials (DATABASE_URL, REDIS_URL, etc.).
 4. `uvicorn main:app --reload`
 
 ### Frontend
 1. `cd frontend`
 2. `npm install`
-3. `npm run dev`
-
-### Infrastructure
-- Run `docker-compose up -d` to start PostgreSQL and Redis (optional if using SQLite).
+3. Create `.env.local` and add `NEXT_PUBLIC_SUPABASE_URL`.
+4. `npm run dev`
