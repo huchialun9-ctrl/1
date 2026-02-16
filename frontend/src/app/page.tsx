@@ -1,114 +1,162 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { MessageSquare, Sparkles, UserPlus, Zap } from "lucide-react";
+import { Sparkles, MessageSquare, TrendingUp, Compass, Search } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
+import { useState, useEffect } from "react";
 
-export default function Home() {
-  return (
-    <main className="flex min-h-screen flex-col items-center px-4 pt-32 pb-20 relative overflow-hidden mesh-gradient">
-      {/* Dynamic Background Elements */}
-      <div className="absolute top-1/4 -left-20 w-80 h-80 bg-primary/20 rounded-full blur-[120px] -z-10 animate-pulse" />
-      <div className="absolute top-1/2 -right-20 w-80 h-80 bg-secondary/10 rounded-full blur-[120px] -z-10" />
-
-      {/* Hero Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1, ease: "easeOut" }}
-        className="text-center z-10 flex flex-col items-center mt-10 md:mt-20"
-      >
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.8 }}
-          className="mb-8 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-primary text-sm font-bold tracking-wider uppercase backdrop-blur-sm shadow-xl"
-        >
-          <Sparkles className="w-4 h-4" />
-          The future of role-play
-        </motion.div>
-
-        <h1 className="text-7xl md:text-9xl font-black mb-8 leading-tight tracking-tighter">
-          <span className="bg-clip-text text-transparent bg-linear-to-b from-white to-white/60">O</span>
-          <span className="bg-clip-text text-transparent bg-linear-to-tr from-primary via-secondary to-accent text-glow">ai</span>
-        </h1>
-
-        <p className="text-xl md:text-2xl text-white/50 mb-12 max-w-3xl mx-auto font-medium leading-relaxed">
-          The world's first ultra-low latency, <span className="text-white/80">long-term memory</span> RPG platform where AI characters feel <span className="text-white/80 italic">truly alive</span>.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-6 justify-center w-full max-w-md">
-          <Link href="/create" className="flex-1">
-            <motion.button
-              whileHover={{ scale: 1.05, y: -4 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-full px-8 py-5 bg-linear-to-r from-primary to-secondary text-white font-black rounded-2xl flex items-center justify-center gap-3 shadow-2xl shadow-primary/30"
-            >
-              <UserPlus className="w-6 h-6" />
-              Build Persona
-            </motion.button>
-          </Link>
-          <Link href="/chat" className="flex-1">
-            <motion.button
-              whileHover={{ scale: 1.05, y: -4 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-full px-8 py-5 bg-white/5 text-white font-black rounded-2xl flex items-center justify-center gap-3 border border-white/10 backdrop-blur-xl shadow-2xl hover:bg-white/10 transition-all"
-            >
-              <MessageSquare className="w-6 h-6" />
-              Start Journey
-            </motion.button>
-          </Link>
-        </div>
-      </motion.div>
-
-      {/* Features Grid */}
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ delay: 0.2, duration: 1 }}
-        className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-40 max-w-6xl w-full relative"
-      >
-        <FeatureCard
-          icon={<Zap className="w-6 h-6" />}
-          title="Instant Response"
-          description="Powered by custom vLLM optimization for near-instant 100ms latency."
-          color="bg-primary"
-        />
-        <FeatureCard
-          icon={<Sparkles className="w-6 h-6" />}
-          title="Neural Link"
-          description="Context-aware RAG preserves your story across weeks of deep dialogue."
-          color="bg-secondary"
-        />
-        <FeatureCard
-          icon={<UserPlus className="w-6 h-6" />}
-          title="Deep Traits"
-          description="Define system prompts, few-shot patterns, and granular core traits."
-          color="bg-accent"
-        />
-      </motion.div>
-    </main>
-  );
+interface Character {
+  id: number;
+  name: string;
+  title: string;
+  description: string;
+  image_url: string;
+  banner_url: string;
+  interaction_count: number;
 }
 
-function FeatureCard({ icon, title, description, color }: { icon: React.ReactNode, title: string, description: string, color: string }) {
-  return (
-    <motion.div
-      whileHover={{ y: -8 }}
-      className="glass-card p-10 group relative"
-    >
-      <div className={`w-14 h-14 rounded-2xl ${color} flex items-center justify-center mb-8 shadow-xl group-hover:scale-110 transition-transform duration-500`}>
-        {icon}
-      </div>
-      <h3 className="text-2xl font-bold mb-4 bg-clip-text text-transparent bg-linear-to-b from-white to-white/70">{title}</h3>
-      <p className="text-white/40 leading-relaxed font-medium group-hover:text-white/60 transition-colors">
-        {description}
-      </p>
+const categories = ["For You", "Anime", "Helpers", "Games", "Roleplay", "Politics", "Philosophy"];
 
-      {/* Decorative Gradient */}
-      <div className="absolute bottom-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-[40px] -z-10 opacity-0 group-hover:opacity-100 transition-opacity" />
-    </motion.div>
+export default function Home() {
+  const [characters, setCharacters] = useState<Character[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState("For You");
+
+  useEffect(() => {
+    const fetchChars = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        const res = await fetch(`${apiUrl}/characters/`);
+        const data = await res.json();
+        setCharacters(data);
+      } catch (e) {
+        console.error("Failed to fetch characters", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchChars();
+  }, []);
+
+  return (
+    <div className="min-h-full bg-black">
+      {/* Hero Banner Section */}
+      <section className="relative h-[45vh] min-h-[450px] flex items-center px-6 md:px-12 overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent z-10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent z-10" />
+          <div className="w-full h-full bg-[#0a0a0a] mesh-gradient opacity-40 shadow-[inset_0_0_100px_rgba(0,0,0,0.8)]" />
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="relative z-20 max-w-2xl"
+        >
+          <div className="flex items-center gap-2 mb-6 text-primary">
+            <Sparkles className="w-5 h-5 animate-pulse" />
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-glow">Neural Selection Platform</span>
+          </div>
+          <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-white mb-8 leading-[0.85]">
+            WHAT'S YOUR <br />
+            <span className="text-glow">STORY?</span>
+          </h1>
+
+          <div className="glass flex items-center gap-4 px-6 py-5 w-full max-w-lg group border-white/5 rounded-3xl transition-all hover:border-primary/30">
+            <Search className="w-6 h-6 text-white/20 group-focus-within:text-primary transition-colors" />
+            <input
+              type="text"
+              placeholder="Search characters, worlds, or authors..."
+              className="bg-transparent border-none outline-none text-white font-semibold placeholder:text-white/10 w-full text-lg"
+            />
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Discovery Portal */}
+      <section className="px-6 md:px-12 py-12">
+        {/* Category Tabs */}
+        <div className="flex items-center gap-4 overflow-x-auto pb-8 no-scrollbar scroll-smooth">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`
+                 whitespace-nowrap px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all
+                 ${activeCategory === cat ? 'bg-white text-black scale-105 shadow-xl' : 'bg-white/5 text-white/40 hover:bg-white/10 hover:text-white'}
+               `}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Content Grids */}
+        <div className="space-y-16">
+          <section>
+            <div className="flex items-center justify-between mb-10">
+              <div className="flex items-center gap-3">
+                <TrendingUp className="w-5 h-5 text-secondary" />
+                <h2 className="text-3xl font-black tracking-tighter uppercase italic">Trending Characters</h2>
+              </div>
+              <Link href="/discover" className="text-[10px] font-black uppercase tracking-widest text-white/20 hover:text-white transition-colors">See all →</Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+              {loading ? (
+                Array(5).fill(0).map((_, i) => (
+                  <div key={i} className="h-80 glass rounded-[2.5rem] animate-pulse" />
+                ))
+              ) : (
+                characters.map((char) => (
+                  <Link key={char.id} href={`/chat?id=${char.id}`}>
+                    <motion.div
+                      whileHover={{ y: -10, scale: 1.02 }}
+                      className="group relative h-80 rounded-[2.5rem] overflow-hidden glass border-white/5 transition-all duration-500"
+                    >
+                      {/* Artwork Layer */}
+                      <div className="absolute inset-0 z-0">
+                        {char.banner_url ? (
+                          <img src={char.banner_url} alt="" className="w-full h-full object-cover opacity-20 group-hover:opacity-40 group-hover:scale-110 transition-all duration-1000" />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-primary/10 to-secondary/10" />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10" />
+                        <div className="absolute inset-0 bg-black/60 group-hover:bg-black/20 transition-colors duration-500" />
+                      </div>
+
+                      {/* Content Layer */}
+                      <div className="relative z-20 h-full p-8 flex flex-col justify-end">
+                        <div className="w-20 h-20 rounded-3xl overflow-hidden border-2 border-white/5 mb-5 shadow-2xl group-hover:border-primary/50 transition-all duration-500 group-hover:scale-110">
+                          <img src={char.image_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${char.name}`} alt={char.name} className="w-full h-full object-cover" />
+                        </div>
+
+                        <h3 className="text-2xl font-black tracking-tighter text-white mb-1 group-hover:text-glow truncate transition-all">{char.name}</h3>
+                        <p className="text-white/30 text-[9px] font-black uppercase tracking-[0.2em] mb-4 truncate">{char.title || "Elite Persona"}</p>
+
+                        <p className="text-xs text-white/50 line-clamp-2 leading-relaxed font-bold mb-6 group-hover:text-white/80 transition-colors">
+                          {char.description}
+                        </p>
+
+                        <div className="flex items-center gap-4 text-[9px] font-black uppercase tracking-[0.2em]">
+                          <div className="flex items-center gap-1.5 text-secondary group-hover:text-glow">
+                            <MessageSquare className="w-3 h-3" />
+                            {(char.interaction_count / 1000).toFixed(1)}k
+                          </div>
+                          <span className="text-white/10 uppercase font-black">@ai_core</span>
+                        </div>
+                      </div>
+
+                      {/* Hover Highlight */}
+                      <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-primary to-secondary scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
+                    </motion.div>
+                  </Link>
+                ))
+              )}
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
   );
 }

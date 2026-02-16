@@ -26,6 +26,14 @@
     background-color: var(--background);
     color: var(--foreground);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    overflow-x: hidden;
+    margin: 0;
+  }
+
+  main {
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 }
 
