@@ -26,6 +26,8 @@ class ChatSession(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id")
     character_id: int = Field(foreign_key="character.id")
     title: str = Field(default="New Chat")
+    affection_score: int = Field(default=50) # Range 0-100
+    user_tags: List[str] = Field(default=[], sa_column_kwargs={"type_": "JSON"})
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class Message(SQLModel, table=True):

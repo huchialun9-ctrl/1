@@ -6,9 +6,10 @@ from typing import List
 import json
 import asyncio
 
-from backend.models import User, Character, ChatSession, Message
-from backend.ai_service import AIService
-from backend.memory_service import MemoryService
+from .models import User, Character, ChatSession, Message
+from .ai_service import AIService
+from .memory_service import MemoryService
+from .moderation_service import ModerationService
 
 # Database setup
 sqlite_url = "sqlite:///./oai.db"
@@ -29,6 +30,7 @@ app.add_middleware(
 
 ai_service = AIService()
 memory_service = MemoryService()
+moderation_service = ModerationService()
 
 @app.on_event("startup")
 def on_startup():
@@ -84,6 +86,11 @@ def create_session(session_data: ChatSession):
 
 @app.post("/chat/{session_id}")
 async def chat(session_id: int, user_message: str):
+    # Safety Check: Input
+    user_message = moderation_service.clean_prompt_injection(user_message)
+    if not moderation_service.is_safe(user_message):
+        return {"response": "[SYSTEM: Content Blocked]"}
+
     with Session(engine) as session:
         # 1. Get Session and Character
         chat_session = session.get(ChatSession, session_id)
@@ -98,11 +105,15 @@ async def chat(session_id: int, user_message: str):
         session.commit()
 
         # 3. Retrieve Memory
-        relevant_memories = memory_service.search_memory(str(session_id), user_message)
-        context = "\n".join(relevant_memories)
+        relevant_memories = memory_service.get_context(str(session_id), user_message)
+        context = "\n".join(relevant_memories["long_term"])
 
-        # 4. Prepare Prompt
-        system_prompt = await ai_service.format_prompt(character, context)
+        # 4. Prepare Prompt (with Current State)
+        current_state = {
+            "affection": chat_session.affection_score,
+            "tags": chat_session.user_tags
+        }
+        system_prompt = await ai_service.format_prompt(character, context, current_state)
         
         # 5. Get History
         history = session.exec(select(Message).where(Message.session_id == session_id)).all()
@@ -117,11 +128,26 @@ async def chat(session_id: int, user_message: str):
                     full_content += chunk.text
                     yield chunk.text
             
+            # Phase 5: State Extraction & Sync
+            clean_content, state_update = ai_service.parse_state_updates(full_content)
+            
+            # Safety Check: Output
+            clean_content = moderation_service.filter_content(clean_content)
+
             # Save Assistant Message to DB & Memory
             with Session(engine) as inner_session:
-                asst_msg = Message(session_id=session_id, role="assistant", content=full_content)
+                asst_msg = Message(session_id=session_id, role="assistant", content=clean_content)
                 inner_session.add(asst_msg)
+                
+                # Update Session State
+                db_session = inner_session.get(ChatSession, session_id)
+                if state_update and db_session:
+                    db_session.affection_score = max(0, min(100, db_session.affection_score + state_update["delta"]))
+                    # Merge tags
+                    new_tags = list(set(db_session.user_tags + state_update["tags"]))
+                    db_session.user_tags = new_tags
+                
                 inner_session.commit()
-                memory_service.add_memory(str(session_id), user_message + " -> " + full_content)
+                memory_service.add_message(str(session_id), "assistant", clean_content)
 
         return StreamingResponse(event_generator(), media_type="text/plain")
