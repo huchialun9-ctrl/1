@@ -1,6 +1,6 @@
 import asyncio
-from .ai_service import AIService
-from .memory_service import MemoryService
+from backend.ai_service import AIService
+from backend.memory_service import MemoryService
 import json
 
 class MemorySynthesizer:

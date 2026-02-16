@@ -6,9 +6,9 @@ from typing import List
 import json
 import asyncio
 
-from .models import User, Character, ChatSession, Message
-from .ai_service import AIService
-from .memory_service import MemoryService
+from backend.models import User, Character, ChatSession, Message
+from backend.ai_service import AIService
+from backend.memory_service import MemoryService
 
 # Database setup
 sqlite_url = "sqlite:///./oai.db"
