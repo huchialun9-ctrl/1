@@ -9,7 +9,8 @@
     "venvPath": "/Users/jianyufang/Documents/1",
     "venv": ".venv",
     "extraPaths": [
-        "/Users/jianyufang/Documents/1/backend"
+        "/Users/jianyufang/Documents/1/backend",
+        "/Users/jianyufang/Documents/1/.venv/lib/python3.12/site-packages"
     ],
     "pythonVersion": "3.12",
     "pythonPlatform": "Darwin",

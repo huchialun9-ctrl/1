@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Response
 import os
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -160,3 +160,57 @@ async def chat(session_id: int, user_message: str):
                 memory_service.add_message(str(session_id), "assistant", clean_content)
 
         return StreamingResponse(event_generator(), media_type="text/plain")
+from multimodal_service import MultiModalService
+
+multi_modal_service = MultiModalService()
+
+@app.post("/chat/voice/{session_id}")
+async def chat_voice(session_id: int, audio_file: UploadFile = File(...)):
+    audio_bytes = await audio_file.read()
+    
+    with Session(engine) as session:
+        chat_session = session.get(ChatSession, session_id)
+        if not chat_session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        character = session.get(Character, chat_session.character_id)
+        
+        # 1. Prepare context and prompt
+        relevant_memories = memory_service.get_context(str(session_id), "Voice input processing")
+        context = "\n".join(relevant_memories["long_term"])
+        current_state = {"affection": chat_session.affection_score, "tags": chat_session.user_tags}
+        system_prompt = await ai_service.format_prompt(character, context, current_state)
+        
+        # 2. Get 5 turns of history
+        history = session.exec(select(Message).where(Message.session_id == session_id)).all()
+        history_dicts = [{"role": m.role, "content": m.content} for m in history[-5:]]
+
+        # 3. Process with Gemini (Audio In -> Text Out)
+        # Note: We don't stream for voice to ensure whole response is ready for ElevenLabs
+        response = await ai_service.generate_response(system_prompt, history_dicts, "", audio_data=audio_bytes, stream=False)
+        full_content = response.text
+        
+        # 4. Clean and parse
+        clean_content, state_update = ai_service.parse_state_updates(full_content)
+        clean_content = moderation_service.filter_content(clean_content)
+
+        # 5. Save and update state
+        asst_msg = Message(session_id=session_id, role="assistant", content=clean_content)
+        session.add(asst_msg)
+        if state_update:
+            chat_session.affection_score = max(0, min(100, chat_session.affection_score + state_update["delta"]))
+            chat_session.user_tags = list(set(chat_session.user_tags + state_update["tags"]))
+        session.commit()
+        memory_service.add_message(str(session_id), "assistant", clean_content)
+
+        # 6. Convert to Speech
+        voice_audio = await multi_modal_service.text_to_speech(clean_content)
+        
+        if not voice_audio:
+             # Fallback if ElevenLabs fails
+             return {"text": clean_content, "audio": None}
+
+        # Return audio as binary stream
+        return Response(content=voice_audio, media_type="audio/mpeg", headers={
+            "X-Response-Text": clean_content # Send text in header for UI display
+        })

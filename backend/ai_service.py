@@ -1,6 +1,6 @@
 import google.generativeai as genai
-import os
 import re
+from typing import Optional
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,13 +14,23 @@ class AIService:
     def __init__(self):
         self.model = genai.GenerativeModel('gemini-1.5-pro')
 
-    async def generate_response(self, system_prompt: str, chat_history: list, user_message: str, stream=True):
+    async def generate_response(self, system_prompt: str, chat_history: list, user_message: str, audio_data: Optional[bytes] = None, stream=True):
         # Format history for Gemini
         contents = [{"role": "user", "parts": [{"text": system_prompt}]}]
         for msg in chat_history:
             contents.append({"role": "user" if msg["role"] == "user" else "model", "parts": [{"text": msg["content"]}]})
         
-        contents.append({"role": "user", "parts": [{"text": user_message}]})
+        # Multimodal: Audio + Text
+        user_parts = []
+        if audio_data:
+            user_parts.append({"mime_type": "audio/wav", "data": audio_data})
+        if user_message:
+            user_parts.append({"text": user_message})
+        else:
+            # If only audio is provided, we still need a textual hint or just the audio
+            user_parts.append({"text": "[Audio Input]"})
+
+        contents.append({"role": "user", "parts": user_parts})
         
         response = self.model.generate_content(contents, stream=stream)
         return response

@@ -1,7 +1,8 @@
 {
     "python.defaultInterpreterPath": "/Users/jianyufang/Documents/1/.venv/bin/python",
     "python.analysis.extraPaths": [
-        "/Users/jianyufang/Documents/1/backend"
+        "/Users/jianyufang/Documents/1/backend",
+        "/Users/jianyufang/Documents/1/.venv/lib/python3.12/site-packages"
     ],
     "python.analysis.autoImportCompletions": true,
     "python.analysis.typeCheckingMode": "basic"
