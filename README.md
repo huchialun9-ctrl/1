@@ -1,4 +1,5 @@
 # O ai - High-Interactivity RPG Chat Platform
+**Live Demo**: [https://1-production-25f4.up.railway.app](https://1-production-25f4.up.railway.app)
 
 ## Features
 - **Deep Personalization**: Create characters with unique traits, background stories, and system prompts.
